@@ -10,19 +10,14 @@ export class BinPacker {
     this.items = items;
   }
 
-  /**
-   * Execute the bin packing algorithm and return a detailed result
-   */
   pack(): PackingResult {
     const startTime = Date.now();
 
-    // Use Extreme Point heuristic
     const packer = new ExtremePointPacker(this.container, this.items);
     const { placed, unplaced } = packer.pack();
 
     const computationTimeMs = Date.now() - startTime;
 
-    // Calculate metrics
     const containerVolume = getContainerVolume(this.container);
     const packedVolume = this.calculatePackedVolume(placed);
     const volumeEfficiency = (packedVolume / containerVolume) * 100;
@@ -33,14 +28,9 @@ export class BinPacker {
     const itemsPacked = placed.length;
     const itemsUnpacked = unplaced.reduce((sum, u) => sum + u.quantity, 0);
 
-    const unpackedItemsStr = unplaced
-      .map(u => {
-        const item = this.items.find(i => i.id === u.itemId);
-        return `${u.itemId} (${u.quantity} units)`;
-      });
+    const unpackedItemsStr = unplaced.map(u => `${u.itemId} (${u.quantity} units)`);
 
     const warnings = this.generateWarnings(placed, this.container, totalWeight);
-
     const centerOfGravity = packer.getCenterOfGravity();
 
     return {
@@ -62,9 +52,6 @@ export class BinPacker {
     };
   }
 
-  /**
-   * Calculate total volume of packed items
-   */
   private calculatePackedVolume(placedItems: PlacedItem[]): number {
     return placedItems.reduce((total, item) => {
       const vol = item.dimensionsPlaced.length * item.dimensionsPlaced.width * item.dimensionsPlaced.height;
@@ -72,18 +59,13 @@ export class BinPacker {
     }, 0);
   }
 
-  /**
-   * Generate warnings for the packing result
-   */
   private generateWarnings(placed: PlacedItem[], container: Container, totalWeight: number): string[] {
     const warnings: string[] = [];
 
-    // Weight limit warning
     if (totalWeight > container.maxWeight * 0.95) {
       warnings.push(`High weight utilization: ${(totalWeight / container.maxWeight * 100).toFixed(1)}%`);
     }
 
-    // Center of gravity warning
     const cog = this.calculateCenterOfGravity(placed);
     const containerCenter = {
       x: container.length / 2,
@@ -108,9 +90,6 @@ export class BinPacker {
     return warnings;
   }
 
-  /**
-   * Calculate center of gravity
-   */
   private calculateCenterOfGravity(placedItems: PlacedItem[]) {
     let totalWeight = 0;
     let weightedX = 0;

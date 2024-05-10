@@ -3,7 +3,6 @@ export * from './algorithm';
 export * from './utils/geometry';
 export * from './utils/rotations';
 
-// Main entry point
 import { BinPacker } from './algorithm';
 import { Container, Item, PackingResult } from './models';
 

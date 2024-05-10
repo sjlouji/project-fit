@@ -9,9 +9,6 @@ export interface BoundingBox {
   maxZ: number;
 }
 
-/**
- * Create bounding box for an item at a given position
- */
 export function createBoundingBox(
   position: Position3D,
   dimensions: ItemDimensions
@@ -26,9 +23,6 @@ export function createBoundingBox(
   };
 }
 
-/**
- * Check if two bounding boxes overlap in 3D space
- */
 export function boundingBoxesOverlap(box1: BoundingBox, box2: BoundingBox): boolean {
   return !(
     box1.maxX <= box2.minX ||
@@ -40,9 +34,6 @@ export function boundingBoxesOverlap(box1: BoundingBox, box2: BoundingBox): bool
   );
 }
 
-/**
- * Check if a bounding box is completely within container bounds
- */
 export function isWithinContainerBounds(
   bbox: BoundingBox,
   containerLength: number,
@@ -59,13 +50,7 @@ export function isWithinContainerBounds(
   );
 }
 
-/**
- * Calculate contact surface area between two boxes
- * Returns the area where the boxes would touch
- */
 export function getContactSurfaceArea(box1: BoundingBox, box2: BoundingBox): number {
-  // Check if boxes are adjacent or touching
-  // Top of box1 touching bottom of box2
   if (Math.abs(box1.maxZ - box2.minZ) < 0.01) {
     const overlapX = Math.min(box1.maxX, box2.maxX) - Math.max(box1.minX, box2.minX);
     const overlapY = Math.min(box1.maxY, box2.maxY) - Math.max(box1.minY, box2.minY);
@@ -76,9 +61,6 @@ export function getContactSurfaceArea(box1: BoundingBox, box2: BoundingBox): num
   return 0;
 }
 
-/**
- * Calculate center of gravity for a set of positioned items
- */
 export function calculateCenterOfGravity(
   items: Array<{ position: Position3D; dimensions: ItemDimensions; weight: number }>
 ): Position3D {

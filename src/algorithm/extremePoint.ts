@@ -23,15 +23,10 @@ export class ExtremePointPacker {
     this.extremePoints = [{ x: 0, y: 0, z: 0 }];
   }
 
-  /**
-   * Execute the extreme point packing algorithm
-   */
   pack(): { placed: PlacedItem[]; unplaced: Array<{ itemId: string; quantity: number }> } {
     this.startTime = Date.now();
 
-    // Sort items: by volume (largest first), then by priority
     const sortedItems = this.sortItems();
-
     const unplaced: Array<{ itemId: string; quantity: number }> = [];
 
     for (const item of sortedItems) {
@@ -60,9 +55,6 @@ export class ExtremePointPacker {
     return { placed: this.placedItems, unplaced };
   }
 
-  /**
-   * Find the best position for an item among all extreme points
-   */
   private findBestPlacement(item: Item): PlacedItem | null {
     let bestPlacement: PlacedItem | null = null;
     let bestScore = Infinity;
@@ -109,12 +101,7 @@ export class ExtremePointPacker {
     return bestPlacement;
   }
 
-  /**
-   * Score a placement: prefer lower z (ground level), then lower x, then lower y
-   */
   private calculatePlacementScore(position: Position3D, dimensions: ItemDimensions): number {
-    // Priority: minimize Z first (keep items low), then minimize X, then Y
-    // This encourages layer-by-layer packing
     const zScore = position.z * 1000;
     const xScore = position.x * 10;
     const yScore = position.y;
@@ -122,11 +109,7 @@ export class ExtremePointPacker {
     return zScore + xScore + yScore;
   }
 
-  /**
-   * Update extreme points after placing an item
-   */
   private updateExtremePoints(placed: PlacedItem): void {
-    // Remove extreme points that are now inside the placed item's bounding box
     const newPoints: ExtremPoint[] = [];
 
     for (const point of this.extremePoints) {
@@ -145,7 +128,6 @@ export class ExtremePointPacker {
 
     this.extremePoints = newPoints;
 
-    // Add new extreme points based on the placed item
     const newExtremePoints = [
       { x: placed.position.x + placed.dimensionsPlaced.length, y: placed.position.y, z: placed.position.z },
       { x: placed.position.x, y: placed.position.y + placed.dimensionsPlaced.width, z: placed.position.z },
@@ -163,9 +145,6 @@ export class ExtremePointPacker {
     }
   }
 
-  /**
-   * Sort items for packing: largest volume first, then by priority
-   */
   private sortItems(): Item[] {
     const items = Array.from(this.itemsMap.values());
 
@@ -174,44 +153,29 @@ export class ExtremePointPacker {
       const volumeB = b.length * b.width * b.height;
 
       if (volumeA !== volumeB) {
-        return volumeB - volumeA; // Largest first
+        return volumeB - volumeA;
       }
 
-      return a.priority - b.priority; // Then by priority
+      return a.priority - b.priority;
     });
   }
 
-  /**
-   * Get extreme points for debugging
-   */
   getExtremePoints(): ExtremPoint[] {
     return this.extremePoints;
   }
 
-  /**
-   * Get placed items
-   */
   getPlacedItems(): PlacedItem[] {
     return this.placedItems;
   }
 
-  /**
-   * Get computation time in milliseconds
-   */
   getComputationTimeMs(): number {
     return Date.now() - this.startTime;
   }
 
-  /**
-   * Get current total weight
-   */
   getCurrentWeight(): number {
     return this.currentWeight;
   }
 
-  /**
-   * Get center of gravity
-   */
   getCenterOfGravity(): Position3D {
     return calculateCenterOfGravity(
       this.placedItems.map(p => ({
