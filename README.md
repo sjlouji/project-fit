@@ -88,6 +88,10 @@ console.log(`Packed: ${result.itemsPacked} items`);
 console.log(`Weight: ${result.totalWeight}kg`);
 ```
 
+## Visualize Your Packing
+
+Want to see how items are arranged? Use **[Project Fit Viewer](https://github.com/sjlouji/project-fit-viewer)** — a 3D visualization tool that shows exactly how items are packed inside your container.
+
 ## Documentation
 
 - **[Getting Started & Contributing](./docs/CONTRIBUTING.md)** — Setup, building, testing
