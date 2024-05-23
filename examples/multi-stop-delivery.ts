@@ -78,22 +78,9 @@ const multiStopItems: Item[] = [
   }
 ];
 
-function analyzeDeliveryOrder(label: string) {
-  console.log(`\n${'='.repeat(80)}`);
-  console.log(`  ${label}`);
-  console.log(`${'='.repeat(80)}\n`);
-
+export function analyzeMultiStopDelivery() {
   const result = packItems(deliveryTruck, multiStopItems);
   const itemsMap = new Map(multiStopItems.map(item => [item.id, item]));
-
-  console.log(`📦 PACKING RESULTS:`);
-  console.log(`   Items Packed: ${result.itemsPacked}/${result.itemsPacked + result.itemsUnpacked}`);
-  console.log(`   Volume Utilization: ${result.utilizationPct.toFixed(2)}%`);
-  console.log(`   Weight Utilization: ${((result.totalWeight / deliveryTruck.maxWeight) * 100).toFixed(2)}%`);
-  console.log(`   Total Weight: ${result.totalWeight}kg`);
-  console.log(`   Computation Time: ${result.computationTimeMs}ms\n`);
-
-  console.log(`📍 DELIVERY STOP BREAKDOWN:`);
 
   const stopGroups = new Map<number, any[]>();
 
@@ -112,7 +99,7 @@ function analyzeDeliveryOrder(label: string) {
 
   const stops = Array.from(stopGroups.keys()).sort((a, b) => a - b);
 
-  for (const stop of stops) {
+  const stopDetails = stops.map(stop => {
     const items = stopGroups.get(stop)!;
     const totalWeight = items.reduce((sum, i) => sum + i.placed.weight, 0);
     const minZ = Math.min(...items.map(i => i.placed.position.z));
@@ -121,121 +108,48 @@ function analyzeDeliveryOrder(label: string) {
     );
     const avgZ = items.reduce((sum, i) => sum + i.placed.position.z, 0) / items.length;
 
-    console.log(`   Stop ${stop}:`);
-    console.log(`      Items: ${items.length} units`);
-    console.log(`      Weight: ${totalWeight}kg`);
-    console.log(`      Height Range: ${minZ.toFixed(0)}cm - ${maxZ.toFixed(0)}cm`);
-    console.log(`      Average Z: ${avgZ.toFixed(0)}cm`);
-
-    items.forEach(({ item: itemType, placed }) => {
-      console.log(`        • ${itemType.id}: 1 unit @ Z=${placed.position.z.toFixed(0)}cm`);
-    });
-  }
-
-  console.log(`\n⚠️ DELIVERY ORDER VALIDATION:`);
+    return {
+      stop,
+      itemCount: items.length,
+      totalWeight,
+      minZ,
+      maxZ,
+      avgZ,
+      items: items.map(({ item: itemType }) => itemType.id)
+    };
+  });
 
   const validation = ConstraintValidator.validateDeliveryOrderSequence(
     result.packedItems,
     itemsMap
   );
 
-  console.log(`   Status: ${validation.valid ? '✅ LIFO COMPLIANT' : '❌ VIOLATIONS DETECTED'}`);
-  console.log(`   ${validation.summary}\n`);
-
-  if (validation.violations.length > 0) {
-    console.log(`   Violations:`);
-    validation.violations.forEach(violation => {
-      console.log(`      • ${violation.message}`);
-    });
-  }
-
-  console.log(`\n📊 UNLOADING SEQUENCE:`);
-
-  if (validation.valid) {
-    console.log(`   You can unload stops in order (1 → 2 → 3 → 4) without moving other cargo:`);
-    stops.forEach(stop => {
-      const items = stopGroups.get(stop)!;
-      const unloadIds = items.map(i => i.item.id).join(', ');
-      console.log(`      Stop ${stop}: Unload ${unloadIds}`);
-    });
-  } else {
-    console.log(`   ⚠️ Reposition items before unloading to maintain LIFO order.`);
-    console.log(`   Affected stops: ${validation.violations.map(v => `Stop ${v.stop1} → Stop ${v.stop2}`).join(', ')}`);
-  }
-
-  console.log(`\n⚖️ CENTER OF GRAVITY:`);
-  console.log(`   X: ${result.centerOfGravity.x.toFixed(0)}cm`);
-  console.log(`   Y: ${result.centerOfGravity.y.toFixed(0)}cm`);
-  console.log(`   Z: ${result.centerOfGravity.z.toFixed(0)}cm`);
-
   const cogDistance = Math.sqrt(
     Math.pow(result.centerOfGravity.x - deliveryTruck.length / 2, 2) +
     Math.pow(result.centerOfGravity.y - deliveryTruck.width / 2, 2)
   );
 
-  console.log(`   Distance from center: ${cogDistance.toFixed(0)}cm`);
-  console.log(`   Stability: ${cogDistance < 200 ? '✅ Excellent' : cogDistance < 300 ? '⚠️ Good' : '❌ Poor'}\n`);
-
   return {
-    result,
-    validation,
-    stopGroups
+    containerId: deliveryTruck.id,
+    packing: {
+      itemsPacked: result.itemsPacked,
+      itemsUnpacked: result.itemsUnpacked,
+      volumeUtilization: result.utilizationPct,
+      weightUtilization: ((result.totalWeight / deliveryTruck.maxWeight) * 100),
+      totalWeight: result.totalWeight,
+      computationTime: result.computationTimeMs
+    },
+    stops: stopDetails,
+    validation: {
+      isValid: validation.valid,
+      summary: validation.summary,
+      violations: validation.violations
+    },
+    centerOfGravity: {
+      x: result.centerOfGravity.x,
+      y: result.centerOfGravity.y,
+      z: result.centerOfGravity.z,
+      distanceFromCenter: cogDistance
+    }
   };
 }
-
-function main() {
-  console.log(`\n${'#'.repeat(80)}`);
-  console.log('#' + ' '.repeat(78) + '#');
-  console.log('#  Project Fit - Multi-Stop Delivery Route Optimization' + ' '.repeat(25) + '#');
-  console.log('#' + ' '.repeat(78) + '#');
-  console.log(`${'#'.repeat(80)}\n`);
-
-  console.log('This example demonstrates optimal packing for a multi-stop delivery route.');
-  console.log('The algorithm ensures LIFO (Last In, First Out) compliance whenever possible,');
-  console.log('allowing stops to be unloaded in sequence without moving other cargo.\n');
-
-  const { result, validation, stopGroups } = analyzeDeliveryOrder(
-    'Multi-Stop Delivery Route Optimization'
-  );
-
-  console.log(`${'='.repeat(80)}`);
-  console.log(`  ROUTE OPTIMIZATION SUMMARY`);
-  console.log(`${'='.repeat(80)}\n`);
-
-  console.log('Key Metrics:');
-  const stops = Array.from(stopGroups.keys()).sort((a, b) => a - b);
-  console.log(
-    `  • Total Stops: ${stops.length}`
-  );
-  console.log(`  • Items Packed: ${result.itemsPacked}`);
-  console.log(`  • LIFO Compliant: ${validation.valid ? 'Yes ✅' : 'No ❌'}`);
-  console.log(`  • Packing Efficiency: ${result.utilizationPct.toFixed(1)}%`);
-  console.log(`  • Weight Efficiency: ${((result.totalWeight / deliveryTruck.maxWeight) * 100).toFixed(1)}%\n`);
-
-  console.log('Recommendations:');
-
-  if (validation.valid) {
-    console.log('  ✅ Current load is LIFO compliant.');
-    console.log('  • Unload stops in sequential order without rearranging cargo.');
-    console.log('  • Load was optimized for maximum accessibility.\n');
-  } else {
-    console.log('  ⚠️ Current load has LIFO violations.');
-    console.log('  • Before unloading, reposition blocking items temporarily.');
-    console.log(`  • Affected route segments: ${validation.violations.map(v => `${v.stop1}→${v.stop2}`).join(', ')}\n`);
-
-    validation.violations.forEach(violation => {
-      console.log(`  Action: Stop ${violation.stop1} (at ${violation.stop1AvgZ.toFixed(0)}cm) must be repositioned`);
-      console.log(
-        `         above Stop ${violation.stop2} (at ${violation.stop2AvgZ.toFixed(0)}cm) before unloading.\n`
-      );
-    });
-  }
-
-  console.log('Performance:');
-  console.log(`  • Packing computed in ${result.computationTimeMs}ms`);
-  console.log(`  • Route can be executed in ${stops.length} stops\n`);
-
-  console.log(`${'#'.repeat(80)}\n`);
-}
-
-main();
