@@ -1,0 +1,110 @@
+import { Container, Item } from '../src/models';
+
+export const foodBeverageContainer: Container = {
+  id: 'REFRIGERATED-TRUCK-001',
+  length: 1200,
+  width: 234,
+  height: 235,
+  maxWeight: 28000,
+  unit: 'cm',
+  weightUnit: 'kg'
+};
+
+export const foodBeverageItems: Item[] = [
+  {
+    id: 'PALLET-BOTTLED-WATER',
+    type: 'pallet',
+    length: 120,
+    width: 80,
+    height: 140,
+    weight: 600,
+    quantity: 6,
+    stackable: true,
+    maxStackWeight: 1800,
+    fragile: true,
+    loadBearing: true,
+    rotationAllowed: [],
+    priority: 2,
+    deliveryStop: 1
+  },
+  {
+    id: 'CARTON-DAIRY-PRODUCTS',
+    type: 'carton',
+    length: 60,
+    width: 40,
+    height: 40,
+    weight: 28,
+    quantity: 35,
+    stackable: true,
+    maxStackWeight: 400,
+    fragile: false,
+    loadBearing: true,
+    rotationAllowed: ['xy', 'xz'],
+    priority: 3,
+    deliveryStop: 1
+  },
+  {
+    id: 'CARTON-BEVERAGES-GLASS',
+    type: 'carton',
+    length: 50,
+    width: 40,
+    height: 35,
+    weight: 32,
+    quantity: 20,
+    stackable: false,
+    maxStackWeight: 0,
+    fragile: true,
+    loadBearing: false,
+    rotationAllowed: ['xy'],
+    priority: 1,
+    deliveryStop: 1
+  },
+  {
+    id: 'CARTON-FRESH-PRODUCE',
+    type: 'carton',
+    length: 60,
+    width: 45,
+    height: 30,
+    weight: 20,
+    quantity: 40,
+    stackable: true,
+    maxStackWeight: 300,
+    fragile: true,
+    loadBearing: false,
+    rotationAllowed: ['xy', 'xz'],
+    priority: 1,
+    deliveryStop: 2
+  },
+  {
+    id: 'CARTON-FROZEN-GOODS',
+    type: 'carton',
+    length: 55,
+    width: 45,
+    height: 40,
+    weight: 35,
+    quantity: 25,
+    stackable: true,
+    maxStackWeight: 450,
+    fragile: false,
+    loadBearing: true,
+    rotationAllowed: ['xy', 'xz'],
+    priority: 4,
+    deliveryStop: 1
+  },
+  {
+    id: 'CARTON-BAKERY-ITEMS',
+    type: 'carton',
+    length: 50,
+    width: 40,
+    height: 25,
+    weight: 15,
+    quantity: 30,
+    stackable: true,
+    maxStackWeight: 200,
+    fragile: true,
+    loadBearing: false,
+    rotationAllowed: ['xy'],
+    priority: 1,
+    deliveryStop: 2
+  }
+];
