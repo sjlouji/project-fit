@@ -1,9 +1,14 @@
 {
-  "name": "project-fit",
+  "name": "@sjlouji/project-fit",
   "version": "0.1.0",
-  "description": "3D Bin Packing Algorithm in TypeScript",
+  "description": "Professional 3D bin packing algorithm with physics-based constraints and LIFO delivery order validation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -11,16 +16,36 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint src --ext .ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run test && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github-personal.com:sjlouji/project-fit.git"
+  },
+  "homepage": "https://github.com/sjlouji/project-fit",
+  "bugs": {
+    "url": "https://github.com/sjlouji/project-fit/issues"
   },
   "keywords": [
     "bin-packing",
     "3d-packing",
+    "3d-bin-packing",
     "algorithm",
-    "optimization"
+    "optimization",
+    "logistics",
+    "shipping",
+    "container-packing",
+    "lifo",
+    "delivery-order",
+    "constraint-satisfaction",
+    "extreme-point"
   ],
-  "author": "",
+  "author": "Joan Louji",
   "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",
