@@ -1,77 +1,78 @@
 # Project Fit — 3D Bin Packing Algorithm
 
-A professional TypeScript implementation of a 3D bin packing algorithm optimized for logistics and cargo management. Efficiently arranges items into containers while respecting physical constraints like weight limits, stackability, fragility, and delivery order requirements.
+A TypeScript library that solves the 3D bin packing problem. It figures out how to efficiently pack items (boxes, pallets, etc.) into containers and trucks while respecting real-world constraints like weight limits and fragility.
 
-## What is Project Fit?
+## What It Does
 
-Project Fit solves the 3D bin packing problem using an Extreme Point heuristic algorithm. It's designed for real-world logistics scenarios: from e-commerce warehouses to manufacturing plants to food distribution networks. The algorithm maximizes container utilization while enforcing realistic physical constraints.
+Project Fit helps you pack cargo into containers optimally. Instead of manually arranging items, the algorithm automatically finds good placements that maximize space usage while keeping things physically safe (no putting heavy items on delicate ones, respecting weight limits, etc).
 
-## Features
+Common uses:
+- **E-commerce** — Packing orders into boxes for shipment
+- **Logistics** — Loading trucks with multiple stops
+- **Manufacturing** — Organizing warehouse storage
+- **Food Distribution** — Handling temperature-sensitive products
 
-- **Extreme Point Heuristic** — Fast, effective packing algorithm (typical truck loads in milliseconds)
-- **Multi-Stop Delivery** — LIFO (Last In, First Out) validation for route optimization
-- **Flexible Item Types** — Supports cartons, pallets, crates, drums, and custom containers
-- **Rotation Support** — Configurable rotation axes per item
-- **Physics-Based Constraints**:
-  - Weight limits and cascading stack weight validation
-  - Stackability rules with maximum stack weight enforcement
-  - Fragile item protection (no weight on top)
-  - Load bearing capacity checks
-  - Center of gravity stability for high stacks
-- **Comprehensive Metrics**:
-  - Volume and weight utilization percentages
-  - Center of gravity calculation
-  - Computation time tracking
-  - LIFO compliance reporting
+## Key Features
+
+- **Fast Packing** — Optimizes typical truck loads in milliseconds
+- **Smart Placement** — Finds good arrangements automatically
+- **Rotation Support** — Rotates items to fit better
+- **Real-World Rules**:
+  - Respects weight limits
+  - Prevents stacking on fragile items
+  - Enforces stackability rules
+  - Checks load bearing capacity
+  - Prevents top-heavy loading
+- **Multi-Stop Routes** — Validates items are loaded in reverse order for unloading
+- **Detailed Metrics** — Shows space used, weight used, center of gravity, and more
 
 ## Project Structure
 
 ```
 project-fit/
 ├── src/
-│   ├── models/              # TypeScript interfaces
-│   ├── algorithm/           # Core packing engine
-│   │   ├── packer.ts       # Main BinPacker class
-│   │   ├── extremePoint.ts # Heuristic implementation
-│   │   └── constraints.ts  # Constraint validation
-│   ├── utils/              # Geometry and rotation utilities
-│   └── __tests__/          # 39+ unit and integration tests
-├── examples/               # Real-world scenario examples
-├── docs/                   # Detailed documentation
-├── dist/                   # Compiled JavaScript (generated)
+│   ├── models/           # Data types (Container, Item, etc)
+│   ├── algorithm/        # Packing engine
+│   ├── utils/            # Geometry and rotation helpers
+│   └── __tests__/        # Tests (39+ test cases)
+├── examples/             # Real-world examples
+├── docs/                 # Guides and documentation
+├── dist/                 # Compiled code (generated)
 └── package.json
 ```
 
 ## Quick Start
 
+Install:
 ```bash
 npm install @sjlouji/project-fit
 ```
 
+Basic example:
 ```typescript
 import { packItems, Container, Item } from '@sjlouji/project-fit';
 
-const container: Container = {
+const truck: Container = {
   id: 'TRUCK-001',
-  length: 1360,
+  length: 1360,   // cm
   width: 240,
   height: 270,
-  maxWeight: 24000,
+  maxWeight: 24000, // kg
   unit: 'cm',
   weightUnit: 'kg'
 };
 
 const items: Item[] = [
   {
-    id: 'CARTON-001',
+    id: 'CARTON-A',
     type: 'carton',
     length: 60,
     width: 40,
     height: 40,
-    weight: 15,
-    quantity: 20,
+    weight: 15,     // kg per carton
+    quantity: 20,   // pack 20 of these
     stackable: true,
-    maxStackWeight: 500,
+    maxStackWeight: 500, // can stack up to 500kg on top
     fragile: false,
     loadBearing: true,
     rotationAllowed: ['xy', 'xz'],
@@ -80,35 +81,35 @@ const items: Item[] = [
   }
 ];
 
-const result = packItems(container, items);
+const result = packItems(truck, items);
 
-console.log(`Utilization: ${result.utilizationPct.toFixed(2)}%`);
-console.log(`Items packed: ${result.itemsPacked}`);
+console.log(`Space used: ${result.utilizationPct.toFixed(1)}%`);
+console.log(`Packed: ${result.itemsPacked} items`);
 console.log(`Weight: ${result.totalWeight}kg`);
 ```
 
 ## Documentation
 
-- **[Contributing & Development](./docs/CONTRIBUTING.md)** — Setup, building, testing, and contributing guide
-- **[Algorithms & Logics](./docs/ALGORITHMS.md)** — Detailed explanation of the Extreme Point heuristic and physics constraints
-- **[API Reference](./docs/API.md)** — Complete API documentation with data models and methods
+- **[Getting Started & Contributing](./docs/CONTRIBUTING.md)** — Setup, building, testing
+- **[How It Works](./docs/ALGORITHMS.md)** — Explains the packing algorithm and constraints
+- **[API Documentation](./docs/API.md)** — Complete function and type reference
 
-## Development Scripts
+## Common Commands
 
 ```bash
 npm run build          # Compile TypeScript
-npm run dev           # Watch mode
+npm run dev           # Watch and compile on changes
 npm run test          # Run all tests
-npm run test:watch    # Watch mode tests
-npm run test:coverage # Coverage report
-npm run lint          # ESLint check
-npm run clean         # Remove build artifacts
+npm run test:watch    # Tests with watch mode
+npm run test:coverage # See which code is tested
+npm run lint          # Check code style
+npm run clean         # Delete build folder
 ```
 
 ## License
 
-MIT — See [LICENSE](./LICENSE) file for details
+MIT — Free to use and modify. See [LICENSE](./LICENSE) for details.
 
 ---
 
-For examples of real-world use cases, check the `examples/` directory.
+Check the `examples/` folder to see how to use the library for different scenarios.

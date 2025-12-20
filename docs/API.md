@@ -2,52 +2,51 @@
 
 ## Main Function
 
-### `packItems(container, items): PackingResult`
+### `packItems(container, items)`
 
-Main entry point that packs items into a container using the Extreme Point heuristic algorithm.
+Packs items into a container and returns results.
 
-**Parameters:**
-- `container: Container` — Target container specifications
-- `items: Item[]` — Array of items to pack
+**Input:**
+- `container` — Container dimensions and limits
+- `items` — List of items to pack
 
-**Returns:** `PackingResult` — Packing outcome with metrics and placement data
+**Output:** Results with placement info and metrics
 
 **Example:**
 ```typescript
-import { packItems, Container, Item } from '@sjlouji/project-fit';
+import { packItems } from '@sjlouji/project-fit';
 
-const result = packItems(container, items);
-console.log(`Packed ${result.itemsPacked} items with ${result.utilizationPct.toFixed(1)}% utilization`);
+const result = packItems(myContainer, myItems);
+console.log(`Packed: ${result.itemsPacked} items`);
+console.log(`Used: ${result.utilizationPct.toFixed(1)}%`);
 ```
 
 ---
 
-## Data Models
+## Container
 
-### `Container`
-
-Represents a shipping container or truck.
+Represents the truck or box you're packing into.
 
 ```typescript
 interface Container {
-  id: string;              // Unique identifier
-  length: number;          // Container length (units)
-  width: number;           // Container width (units)
-  height: number;          // Container height (units)
-  maxWeight: number;       // Maximum weight capacity
-  unit: string;            // Dimension unit ('cm', 'm', etc.)
-  weightUnit: string;      // Weight unit ('kg', 'lbs', etc.)
+  id: string;           // Name/ID for this container
+  length: number;       // Length (in cm, m, etc)
+  width: number;        // Width
+  height: number;       // Height
+  maxWeight: number;    // Max weight (in kg, lbs, etc)
+  unit: string;         // Unit for dimensions ('cm', 'm')
+  weightUnit: string;   // Unit for weight ('kg', 'lbs')
 }
 ```
 
 **Example:**
 ```typescript
-const container: Container = {
+const truck: Container = {
   id: 'TRUCK-40FT',
-  length: 1360,    // cm
-  width: 240,      // cm
-  height: 270,     // cm
-  maxWeight: 24000, // kg
+  length: 1360,
+  width: 240,
+  height: 270,
+  maxWeight: 24000,
   unit: 'cm',
   weightUnit: 'kg'
 };
@@ -55,57 +54,57 @@ const container: Container = {
 
 ---
 
-### `Item`
+## Item
 
-Represents a single item type to be packed (with quantity support).
+Represents something you want to pack (with quantity).
 
 ```typescript
 interface Item {
-  id: string;                          // Unique identifier
-  type: 'carton' | 'pallet' | 'crate' | 'drum' | 'custom';
-  length: number;                      // Item length (units)
-  width: number;                       // Item width (units)
-  height: number;                      // Item height (units)
-  weight: number;                      // Weight per unit (units)
-  quantity: number;                    // Number of units to pack
-  stackable: boolean;                  // Can items stack on top of this?
-  maxStackWeight: number;              // Maximum weight this can support
-  fragile: boolean;                    // Cannot have weight on top
-  loadBearing: boolean;                // Can support weight on top
-  rotationAllowed: RotationAxis[];     // Allowed rotation axes
-  priority: number;                    // Loading priority (1=highest)
-  deliveryStop: number;                // Multi-stop delivery order
+  id: string;                      // Item name/ID
+  type: string;                    // 'carton', 'pallet', 'crate', 'drum'
+  length: number;                  // Item length
+  width: number;                   // Item width
+  height: number;                  // Item height
+  weight: number;                  // Weight per unit
+  quantity: number;                // How many to pack
+  stackable: boolean;              // Can other items sit on top?
+  maxStackWeight: number;          // Max weight on top (if stackable)
+  fragile: boolean;                // Breakable? Nothing goes on top
+  loadBearing: boolean;            // Can support items on top?
+  rotationAllowed: string[];       // Allowed rotations ['xy', 'xz']
+  priority: number;                // Load order (1 = high priority)
+  deliveryStop: number;            // Multi-stop delivery order
 }
 ```
 
-**Parameters Explained:**
+**What each field means:**
 
-- **id**: Unique identifier for tracking (e.g., 'CARTON-001')
-- **type**: Item category for grouping and handling rules
-- **weight**: Applies per unit; total weight = weight × quantity
-- **stackable**: If false, no other items can be placed on top
-- **maxStackWeight**: Maximum cumulative weight allowed on top (if stackable=true)
-- **fragile**: If true, loadBearing is automatically false
-- **loadBearing**: If false, no weight can be placed on top
-- **rotationAllowed**: Empty array = no rotation; ['xy', 'xz'] = can rotate on those axes
-- **priority**: Lower numbers = loaded later (for accessibility/priority handling)
-- **deliveryStop**: For multi-stop routes (1, 2, 3, etc.). LIFO validated.
+- **id** — Unique name (e.g. 'BOX-001')
+- **type** — Category (mainly for organization)
+- **weight** — Per unit (total = weight × quantity)
+- **stackable** — If false, nothing goes on top
+- **maxStackWeight** — If stackable, this is the limit for weight on top
+- **fragile** — True = protect it, no weight allowed on top
+- **loadBearing** — False = can't support weight (like fragile)
+- **rotationAllowed** — Empty = no rotation; ['xy'] = can spin around Z axis
+- **priority** — Lower = loaded first (gets more protected positions)
+- **deliveryStop** — For routes (1, 2, 3...) unload in reverse
 
 **Example:**
 ```typescript
 const item: Item = {
-  id: 'CARTON-BOOKS',
+  id: 'BOOKS-BOX',
   type: 'carton',
-  length: 60,              // cm
-  width: 40,               // cm
-  height: 30,              // cm
-  weight: 20,              // kg per carton
-  quantity: 15,            // 15 cartons
+  length: 60,
+  width: 40,
+  height: 30,
+  weight: 20,              // 20kg per box
+  quantity: 15,            // Pack 15 boxes
   stackable: true,
-  maxStackWeight: 500,     // Can stack up to 500kg on top
+  maxStackWeight: 500,     // Can stack 500kg on top
   fragile: false,
   loadBearing: true,
-  rotationAllowed: ['xy'], // Can rotate length/width
+  rotationAllowed: ['xy'],
   priority: 2,
   deliveryStop: 1
 };
@@ -113,63 +112,60 @@ const item: Item = {
 
 ---
 
-### `RotationAxis`
-
-Specifies which rotation axes are allowed.
+## Rotation Types
 
 ```typescript
 type RotationAxis = 'xy' | 'xz' | 'yz';
 
-// Rotation effects:
-// 'xy': Rotates around Z axis (swaps length ↔ width)
-// 'xz': Rotates around Y axis (swaps length ↔ height)
-// 'yz': Rotates around X axis (swaps width ↔ height)
+// 'xy': Rotate around Z (height) axis
+//   Original: length=60, width=40, height=30
+//   After: length=40, width=60, height=30
+
+// 'xz': Rotate around Y axis
+//   Original: length=60, width=40, height=30
+//   After: length=30, width=40, height=60
+
+// 'yz': Rotate around X axis
+//   Original: length=60, width=40, height=30
+//   After: length=60, width=30, height=40
 ```
 
 ---
 
-### `PlacedItem`
+## PlacedItem
 
-Represents an item that was successfully placed in the container.
+An item that was successfully placed.
 
 ```typescript
 interface PlacedItem {
-  itemId: string;
-  quantity: number;
-  position: Position3D;
-  dimensionsPlaced: ItemDimensions;
-  weight: number;
-  rotationApplied: RotationAxis | null;
+  itemId: string;           // Which item type
+  quantity: number;         // How many units
+  position: Position3D;     // Where it is (x, y, z)
+  dimensionsPlaced: Dimensions;  // Size after rotation
+  weight: number;           // Total weight
+  rotationApplied: string;  // Which rotation was used
 }
 ```
 
-**Fields:**
-- **itemId**: Reference to original item ID
-- **quantity**: Number of units of this item placed
-- **position**: 3D coordinates (x, y, z) of item's minimum corner
-- **dimensionsPlaced**: Actual dimensions used after rotation
-- **weight**: Total weight of this placement
-- **rotationApplied**: Which rotation was applied (if any)
-
 ---
 
-### `Position3D`
+## Position3D
 
-3D coordinates in the container.
+A 3D location in the container.
 
 ```typescript
 interface Position3D {
-  x: number;  // Width direction
-  y: number;  // Length direction
-  z: number;  // Height direction
+  x: number;  // Distance from left edge
+  y: number;  // Distance from front edge
+  z: number;  // Distance from bottom edge
 }
 ```
 
 ---
 
-### `ItemDimensions`
+## Dimensions
 
-Item dimensions (possibly after rotation).
+Width, length, height.
 
 ```typescript
 interface ItemDimensions {
@@ -181,155 +177,100 @@ interface ItemDimensions {
 
 ---
 
-### `PackingResult`
+## Packing Result
 
-Complete result of the packing operation.
+What you get back after packing.
 
 ```typescript
 interface PackingResult {
-  containerId: string;
-  utilizationPct: number;          // Volume utilization (0-100)
-  totalWeight: number;             // Total weight of packed items
-  itemsPacked: number;             // Count of items packed
-  itemsUnpacked: number;           // Count of items not packed
-  unpackedItems: string[];         // IDs of unpacked items
-  packedItems: PlacedItem[];       // All placed items
-  centerOfGravity: Position3D;     // Weighted average position
-  warnings: string[];              // Any warnings (empty if all OK)
-  computationTimeMs: number;       // Algorithm execution time
+  containerId: string;      // Which container
+  utilizationPct: number;   // % of space used
+  totalWeight: number;      // Total weight packed
+  itemsPacked: number;      // How many items fit
+  itemsUnpacked: number;    // How many didn't fit
+  unpackedItems: string[];  // Which items didn't fit
+  packedItems: PlacedItem[]; // All placed items
+  centerOfGravity: Position3D; // Balance point
+  warnings: string[];       // Any issues
+  computationTimeMs: number; // How long it took
 }
 ```
 
-**Example Usage:**
+**Example usage:**
 ```typescript
 const result = packItems(container, items);
 
 console.log(`Container: ${result.containerId}`);
-console.log(`Packed: ${result.itemsPacked}/${result.itemsPacked + result.itemsUnpacked}`);
-console.log(`Utilization: ${result.utilizationPct.toFixed(2)}%`);
+console.log(`Packed: ${result.itemsPacked} out of ${result.itemsPacked + result.itemsUnpacked}`);
+console.log(`Space: ${result.utilizationPct.toFixed(1)}%`);
 console.log(`Weight: ${result.totalWeight}kg`);
-console.log(`CoG: (${result.centerOfGravity.x.toFixed(0)}, ${result.centerOfGravity.y.toFixed(0)}, ${result.centerOfGravity.z.toFixed(0)})`);
-console.log(`Computed in ${result.computationTimeMs}ms`);
+console.log(`Balance point: (${result.centerOfGravity.x}, ${result.centerOfGravity.y}, ${result.centerOfGravity.z})`);
 
 if (result.warnings.length > 0) {
-  console.warn('Warnings:', result.warnings);
+  console.log('Warnings:');
+  result.warnings.forEach(w => console.log(`  - ${w}`));
 }
 ```
 
 ---
 
-### `DeliveryOrderViolation`
+## Multi-Stop Delivery Validation
 
-Reported when multi-stop delivery order is not LIFO-compliant.
+Check if items are loaded in the right order for unloading.
 
-```typescript
-interface DeliveryOrderViolation {
-  stop1: number;           // Earlier delivery stop
-  stop2: number;           // Later delivery stop
-  stop1AvgZ: number;       // Average Z height of stop1 items
-  stop2AvgZ: number;       // Average Z height of stop2 items
-  message: string;         // Human-readable explanation
-}
-```
-
-**What it means:** Items for `stop1` should be above items for `stop2`, but aren't. They need to be repositioned before unloading.
-
----
-
-### `DeliveryOrderResult`
-
-Result of LIFO delivery order validation.
-
-```typescript
-interface DeliveryOrderResult {
-  valid: boolean;
-  violations: DeliveryOrderViolation[];
-  summary: string;
-}
-```
-
----
-
-## Utility Functions
-
-### `ConstraintValidator.validateDeliveryOrderSequence(placedItems, itemsMap): DeliveryOrderResult`
-
-Validates that items are arranged in LIFO order for multi-stop delivery.
-
-**Parameters:**
-- `placedItems: PlacedItem[]` — All placed items
-- `itemsMap: Map<string, Item>` — Mapping of item IDs to Item definitions
-
-**Returns:** `DeliveryOrderResult` with validity status and any violations
-
-**Example:**
 ```typescript
 import { ConstraintValidator } from '@sjlouji/project-fit';
 
-const itemsMap = new Map(items.map(item => [item.id, item]));
+const itemsMap = new Map(items.map(i => [i.id, i]));
 const validation = ConstraintValidator.validateDeliveryOrderSequence(
   result.packedItems,
   itemsMap
 );
 
 if (validation.valid) {
-  console.log('✓ Load is LIFO compliant');
+  console.log('✓ Can unload in delivery order');
 } else {
-  console.log('✗ Reposition items:');
-  validation.violations.forEach(v => console.log(`  ${v.message}`));
+  console.log('✗ Need to rearrange:');
+  validation.violations.forEach(v => {
+    console.log(`  ${v.message}`);
+  });
 }
 ```
 
 ---
 
-## Type Definitions Summary
-
-| Type | Purpose |
-|------|---------|
-| `Container` | Target container specs |
-| `Item` | Item type to pack |
-| `PlacedItem` | Placement result |
-| `PackingResult` | Full packing output |
-| `Position3D` | 3D coordinates |
-| `ItemDimensions` | L×W×H dimensions |
-| `RotationAxis` | Rotation type |
-| `DeliveryOrderViolation` | LIFO violation detail |
-| `DeliveryOrderResult` | LIFO validation result |
-
----
-
 ## Common Patterns
 
-### Packing with Constraints
+### Packing with Fragile Items
 
 ```typescript
 const items = [
   {
-    id: 'FRAGILE-GLASS',
+    id: 'GLASS',
     type: 'carton',
     length: 30, width: 30, height: 30,
     weight: 5,
     quantity: 10,
-    stackable: false,     // Cannot stack
-    fragile: true,        // No weight on top
-    loadBearing: false,   // Cannot support weight
-    rotationAllowed: [],  // No rotation
-    priority: 1,          // Load early
+    stackable: false,    // Can't stack
+    fragile: true,       // Nothing goes on top
+    loadBearing: false,
+    rotationAllowed: [],
+    priority: 1,
     deliveryStop: 1
   }
 ];
 
 const result = packItems(container, items);
-// Result: Items placed individually, no stacking
+// Items placed individually with no weight on top
 ```
 
-### Multi-Stop Delivery
+### Multi-Stop Route
 
 ```typescript
 const multiStopItems = [
-  { id: 'STOP-1', deliveryStop: 1, ... },
-  { id: 'STOP-2', deliveryStop: 2, ... },
-  { id: 'STOP-3', deliveryStop: 3, ... }
+  { id: 'STOP1', deliveryStop: 1, ... },
+  { id: 'STOP2', deliveryStop: 2, ... },
+  { id: 'STOP3', deliveryStop: 3, ... }
 ];
 
 const result = packItems(container, multiStopItems);
@@ -338,19 +279,20 @@ const validation = ConstraintValidator.validateDeliveryOrderSequence(
   new Map(multiStopItems.map(i => [i.id, i]))
 );
 
-// STOP-1 items should be at top (highest Z),
-// STOP-3 items at bottom, for LIFO unloading
+if (!validation.valid) {
+  console.log('Rearrange items before unloading');
+}
 ```
 
-### Mixed Item Types
+### Different Item Types
 
 ```typescript
 const items = [
   { id: 'PALLET', type: 'pallet', length: 120, ... },
-  { id: 'CARTON', type: 'carton', length: 60, ... },
+  { id: 'BOX', type: 'carton', length: 60, ... },
   { id: 'DRUM', type: 'drum', length: 90, ... }
 ];
 
 const result = packItems(container, items);
-// Algorithm handles different types, sizes, weights automatically
+// Handles all types automatically
 ```

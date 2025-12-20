@@ -1,146 +1,107 @@
-# Contributing & Development Guide
+# Getting Started & Contributing
 
-## Getting Started
+## Setup
 
-### Prerequisites
+**Requirements:**
+- Node.js 14+
+- npm or pnpm
 
-- Node.js >= 14.0.0
-- npm or pnpm package manager
-
-### Setup
-
+**Install:**
 ```bash
-# Clone the repository
 git clone git@github-personal.com:sjlouji/project-fit.git
 cd project-fit
-
-# Install dependencies
 npm install
-
-# Build the project
 npm run build
 ```
 
-## Development Workflow
+## Development
 
-### Watch Mode
-
-During development, use watch mode to automatically compile TypeScript as you make changes:
-
+**Watch mode** — Automatically compiles when you change code:
 ```bash
 npm run dev
 ```
 
-### Running Tests
-
-Tests are written with Jest and cover unit tests, integration tests, and edge cases.
-
+**Run tests:**
 ```bash
-# Run all tests
-npm test
-
-# Watch mode (rerun tests on file changes)
-npm test:watch
-
-# Generate coverage report
-npm test:coverage
+npm test          # Run all tests
+npm test:watch    # Rerun on changes
+npm test:coverage # Show what's tested
 ```
 
-### Code Linting
-
+**Check code style:**
 ```bash
 npm run lint
 ```
 
-## Project Structure
+## Code Organization
 
 ```
 src/
-├── models/
-│   ├── container.ts      # Container interface
-│   ├── item.ts          # Item interface
-│   └── result.ts        # Packing result interface
-├── algorithm/
-│   ├── packer.ts        # Main BinPacker class
-│   ├── extremePoint.ts  # Extreme Point algorithm
-│   └── constraints.ts   # Constraint validation logic
-├── utils/
-│   ├── geometry.ts      # 3D geometry utilities
-│   └── rotations.ts     # Item rotation calculations
-├── index.ts             # Main export file
-└── __tests__/           # Test files
-    ├── weight-constraints.test.ts
-    ├── rotation-handling.test.ts
-    ├── stability.test.ts
-    ├── edge-cases.test.ts
-    └── delivery-order.test.ts
+├── models/           # Type definitions
+├── algorithm/        # Packing logic
+├── utils/            # Helper functions
+└── __tests__/        # Test files
 ```
 
-## Code Standards
+## Writing Tests
 
-- **Language**: TypeScript 5.x
-- **Format**: ESLint configuration provided
-- **Tests**: Every new feature requires tests
-- **Comments**: Self-documenting code preferred; comments explain "why", not "what"
-- **No AI artifacts**: Keep code human-written and maintainable
-
-## Testing Guidelines
-
-- **Unit Tests**: Test individual functions and methods
-- **Integration Tests**: Test algorithm end-to-end with realistic scenarios
-- **Edge Cases**: Test boundary conditions, empty inputs, extreme values
-- **Real-World Examples**: Include scenario-based tests
-
-Example test structure:
+Tests use Jest. Here's a simple pattern:
 
 ```typescript
 describe('Feature Name', () => {
-  test('should handle nominal case', () => {
-    // Arrange
-    const input = /* ... */;
+  test('should do something', () => {
+    // Setup
+    const input = { ... };
 
-    // Act
-    const result = /* ... */;
+    // Run
+    const result = myFunction(input);
 
-    // Assert
-    expect(result).toBe(/* ... */);
-  });
-
-  test('should handle edge case', () => {
-    // Test boundary conditions
+    // Check
+    expect(result).toBe(expected);
   });
 });
 ```
 
-## Committing Changes
+**Good practices:**
+- Test normal cases
+- Test edge cases (empty, zero, huge values)
+- Test error cases
+- Keep tests focused and short
 
-Commit messages should be clear and descriptive:
+## Code Style
 
-- Use imperative mood: "Add feature" not "Added feature"
-- Include context: "Add LIFO validation for multi-stop delivery" rather than "Fix bug"
-- Keep commits focused on single changes
+- Keep code readable and simple
+- Use clear variable names
+- Comment the "why", not the "what"
+- TypeScript types should be self-explanatory
 
-## Building for Distribution
+## Making Changes
 
-```bash
-npm run clean    # Remove old build
-npm run build    # Compile TypeScript
-npm test         # Verify tests pass
+1. Create a test for what you want to fix/add
+2. Make the code pass the test
+3. Run all tests to make sure nothing broke: `npm test`
+4. Commit with a clear message
+
+## Committing
+
+Write helpful commit messages:
+```
+Good: "Add rotation support for fragile items"
+Bad: "Fix stuff"
+
+Good: "Prevent stacking on load-bearing items"
+Bad: "Update constraints"
 ```
 
-The `dist/` folder contains the compiled JavaScript and TypeScript declarations for distribution.
-
-## Publishing to npm
+## Before Publishing
 
 ```bash
-# Ensure tests pass and build succeeds
-npm test
-npm run build
-
-# Publish (requires npm authentication)
-npm publish
+npm test          # Make sure tests pass
+npm run build     # Compile to dist/
+npm publish       # Publish to npm
 ```
 
 ## Questions?
 
-Refer to the [API Reference](./API.md) for detailed documentation or [Algorithms](./ALGORITHMS.md) for technical deep dives.
+- See [How It Works](./ALGORITHMS.md) for algorithm details
+- See [API Docs](./API.md) for all functions and types

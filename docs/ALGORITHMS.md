@@ -1,209 +1,141 @@
-# Algorithms & Logics
+# How It Works
 
-## Overview
+## The Packing Algorithm
 
-Project Fit uses the **Extreme Point Heuristic** algorithm to solve 3D bin packing. This approach is computationally efficient while producing high-quality packing solutions for real-world logistics scenarios.
+Project Fit uses an "Extreme Point" algorithm. Here's the basic idea:
 
-## Extreme Point Heuristic
+1. **Start with an empty space** — The container begins at position (0, 0, 0)
+2. **For each item to pack:**
+   - Try placing it at different spots
+   - Try different rotations
+   - Check if it fits (doesn't overlap, doesn't exceed limits, respects rules)
+   - Pick the best placement (lowest position, then closest to left/front)
+   - Add it to the packed list
+   - Mark new possible placement positions
+3. **Return results** — All packed items, metrics, and unpacked items
 
-### What is an Extreme Point?
+**Why "Extreme Point"?**
 
-An extreme point is a 3D coordinate in the container where new items can potentially be placed. The algorithm maintains a list of extreme points that represent "frontiers" in the packing space.
+As you place items, you create edges and corners. The algorithm remembers these as potential spots for the next item. This is much faster than checking every possible coordinate in the container.
 
-As items are placed, new extreme points are generated at their edges and vertices. This allows the algorithm to intelligently explore placement candidates without checking every possible coordinate.
+**Speed:** Typical truck load (100-1000 items) in 50-200 milliseconds.
 
-### Algorithm Steps
+## Constraints (The Rules)
 
-1. **Initialization**
-   - Start with a single extreme point at container origin (0, 0, 0)
-   - Sort items by volume (largest first) and priority (higher priority = lower number)
+The algorithm enforces real-world physics rules so your packing is actually safe and practical.
 
-2. **For Each Item**
-   - For each quantity of the item:
-     - Try all extreme points as candidate positions
-     - For each candidate position, try all allowed rotations
-     - Validate placement against all constraints
-     - Select best placement (lowest Z, then X, then Y for stable stacking)
-     - If placeable:
-       - Add placed item to result
-       - Generate new extreme points from item edges
-     - Else:
-       - Mark item as unpacked
+### 1. Fit in Container
 
-3. **Return Results**
-   - Packing metrics
-   - List of placed items with positions and dimensions
-   - List of unpacked items
-
-### Time Complexity
-
-- **Space**: O(n) where n = number of items
-- **Time**: O(n² × m) where m = number of extreme points (typically < 100 points, milliseconds for standard truck loads)
-
-### Why Extreme Point?
-
-- **Fast**: Suitable for real-time logistics decisions
-- **Effective**: Produces good utilization rates (80%+ for typical scenarios)
-- **Practical**: Easy to implement and understand
-- **Extensible**: Works well with various constraint types
-
-## Physics-Based Constraints
-
-Project Fit enforces real-world physics constraints to ensure packing is not just space-efficient, but also safe and practical.
-
-### 1. Container Bounds
-
-Items must fit entirely within the container dimensions.
-
+Items must fit completely inside:
 ```
-Validation: item.x + item.width ≤ container.width
-           item.y + item.length ≤ container.length
-           item.z + item.height ≤ container.height
+item.x + item.width ≤ container.width
+item.y + item.length ≤ container.length
+item.z + item.height ≤ container.height
 ```
 
-### 2. Overlap Detection
+### 2. No Overlapping
 
-No two items can occupy the same space. Uses AABB (Axis-Aligned Bounding Box) collision detection.
-
-```
-No overlap if:
-  boxA.maxX < boxB.minX  OR
-  boxA.maxY < boxB.minY  OR
-  boxA.maxZ < boxB.minZ
-```
+Items can't occupy the same space. The algorithm checks bounding boxes for collisions.
 
 ### 3. Weight Limits
 
-Total weight cannot exceed container capacity.
-
+Total weight can't exceed container capacity:
 ```
-Validation: Σ(items weight) ≤ container.maxWeight
-```
-
-### 4. Stackability Rules
-
-Items can only be stacked on items that are stackable. Each stackable item has a maximum stack weight limit.
-
-```
-When placing item A on item B:
-  - Item B must have stackable = true
-  - Weight on top of B + A.weight ≤ B.maxStackWeight
+sum of all items ≤ container.maxWeight
 ```
 
-**Example**: A carton with `maxStackWeight: 500` can support up to 500kg of weight on top.
+### 4. Stackability
 
-### 5. Fragile Item Protection
-
-Fragile items cannot have weight placed on top of them. This prevents breakage during transport.
+Items can only stack on other items that allow stacking. Each stackable item has a weight limit for what can sit on top:
 
 ```
-If item.fragile = true:
-  Weight above item = 0
+When stacking item A on item B:
+  - B must have stackable: true
+  - Total weight on B ≤ B.maxStackWeight
 ```
 
-### 6. Load Bearing Capacity
+**Example:** A box marked `maxStackWeight: 500` can support 500kg of other boxes on top of it. If you try to add 600kg, it fails.
 
-Items with `loadBearing: false` cannot support weight on top. Common for certain packaging types.
+### 5. Fragile Items
 
-```
-If item.loadBearing = false:
-  Weight above item = 0
-```
-
-### 7. Center of Gravity Stability
-
-High stacks must remain close to the container's center to prevent tipping during transport.
+Fragile items (breakable stuff) can't have anything placed on top. This protects them during transport.
 
 ```
-For items at Z > 150cm:
+If fragile: true → nothing can go above it
+```
+
+### 6. Load Bearing
+
+Some items can't support weight on top (like certain packaging materials). The algorithm prevents stacking on these.
+
+```
+If loadBearing: false → nothing can go above it
+```
+
+### 7. Stability
+
+Heavy stacks can't be too far from the container center (prevents tipping).
+
+```
+For items stacked high (Z > 150cm):
   distance from center ≤ 300cm
-
-  distance = √[(itemCenterX - containerCenterX)² + (itemCenterY - containerCenterY)²]
 ```
 
-This constraint prevents top-heavy loads that could destabilize the vehicle.
+This keeps the truck balanced and safe while driving.
 
-## Item Rotation
+## Rotating Items
 
-Items can be rotated along different axes to find better fit. Three rotation axes are supported:
+Items can rotate to fit better. Three rotation types:
 
-- **XY**: Rotate around Z axis (swap length/width)
-- **XZ**: Rotate around Y axis (swap length/height)
-- **YZ**: Rotate around X axis (swap width/height)
+- **xy** — Spin around height (swap width & length)
+- **xz** — Spin around depth (swap width & height)
+- **yz** — Spin around width (swap length & height)
 
-Each item specifies which rotations are allowed via `rotationAllowed` array.
+Each item specifies which rotations are allowed. Some items (like pallets) can't rotate at all.
 
-```typescript
-rotationAllowed: ['xy', 'xz']  // Can rotate on XY and XZ planes
+## Multi-Stop Delivery (LIFO)
 
-// Dimension transformations:
-// Original: length=100, width=80, height=60
-// After XY:  length=80,  width=100, height=60
-// After XZ:  length=60,  width=80,  height=100
+For multi-stop routes, items must unload in reverse order.
+
+**Example:** If you're delivering to Stop 1, 2, 3 (in that order):
+- Stop 1 items should be on top (unload first)
+- Stop 3 items on bottom (unload last)
+
+The algorithm checks this and reports violations if items aren't in the right order.
+
+## Understanding the Results
+
+### Utilization %
+
+How much space you actually used:
+```
+Utilization = (items volume / container volume) × 100
 ```
 
-## Multi-Stop Delivery Order
+Higher is better, but 100% is impossible due to shapes and rotation limits.
 
-### LIFO (Last In, First Out) Principle
+### Weight Used %
 
-For multi-stop delivery routes, items must be unloaded in reverse order of loading. Project Fit validates that items for earlier stops are positioned higher (greater Z coordinate) than items for later stops.
-
-### Validation Logic
-
-1. Group placed items by delivery stop
-2. Calculate average Z height for each stop
-3. For consecutive stops, verify: `avgZ(stop_n) > avgZ(stop_n+1)`
-
-If violations exist, items must be repositioned before unloading to avoid moving already-unloaded cargo.
-
-**Example**:
-- Stop 1 items must be above Stop 2 items
-- Stop 2 items must be above Stop 3 items
-- Allows unloading in sequence: Stop 1 → Stop 2 → Stop 3
-
-## Performance Considerations
-
-### Optimization Techniques
-
-1. **Item Sorting**: Larger items first reduces fragmentation
-2. **Priority Handling**: High-priority items placed preferentially
-3. **Extreme Point Management**: Limits extreme points to prevent exponential growth
-4. **Early Termination**: Stops trying rotations once a valid placement found
-
-### Typical Performance
-
-- **100 items**: < 50ms
-- **1000 items**: 100-200ms
-- **10000 items**: 1-2 seconds
-
-Performance scales well for practical logistics scenarios.
-
-## Metrics Explained
-
-### Volume Utilization
-
+How full you are by weight:
 ```
-Utilization% = (Σ item volumes / Container volume) × 100
+Weight % = (total weight / max weight) × 100
 ```
 
-Measures how much of the container space is actually filled. Higher is better, but 100% is rarely achievable due to shape constraints.
+Shows if you're using weight capacity efficiently.
 
-### Weight Utilization
+### Center of Gravity (CoG)
 
-```
-Weight Utilization% = (Total weight / Container max weight) × 100
-```
+The average position of all items (weighted by their weight). For safety:
+- **Low Z** = stable (less likely to tip)
+- **Centered X/Y** = balanced
 
-Indicates how fully the weight capacity is used. Important for transportation cost optimization.
+The algorithm calculates this for all items combined.
 
-### Center of Gravity
+## Performance
 
-Calculated as the weighted average position of all placed items:
+The algorithm scales well:
+- 100 items: < 50ms
+- 1,000 items: 100-200ms
+- 10,000 items: 1-2 seconds
 
-```
-CoG.x = Σ(item.weight × item.centerX) / Σ(item.weight)
-CoG.y = Σ(item.weight × item.centerY) / Σ(item.weight)
-CoG.z = Σ(item.weight × item.centerZ) / Σ(item.weight)
-```
-
-Lower Z values indicate more stable loading. For transportation safety, CoG should be centered horizontally.
+Good enough for real-time decisions in logistics.
